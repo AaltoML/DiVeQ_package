@@ -100,7 +100,7 @@ If this package contributed to your work, please consider citing it:
 
 ```
 @InProceedings{vali2026diveq,
- title={{DiVeQ}: {D}ifferentiable {V}ector {Q}uantization {U}sing the {R}eparameterization {T}rick},
+ title={{DiVeQ}: {D}ifferentiable Vector Quantization Using the Reparameterization Trick},
  author={Vali, Mohammad Hassan and Bäckström, Tom and Solin, Arno},
  booktitle={International Conference on Learning Representations (ICLR)},
  year={2026}
