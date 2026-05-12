@@ -1,7 +1,7 @@
 # Welcome to diveq
 `diveq` (short for differentiable vector quantization) is a tool for implementing and training vector quantization (VQ) in deep neural networks (DNNs), such as a VQ-VAE. It allows end-to-end training of DNNs that contain the non-differentiable VQ module, without any auxiliary losses and hyperparameter tunings. `diveq` is implemented via PyTorch, and it requires `python >= 3.11` and `torch >= 2.0.0` .
 
-![alt text](https://raw.githubusercontent.com/MHVali/DiVeQ_PyPI/main/example/diveq_teaser.png)
+![alt text](https://raw.githubusercontent.com/AaltoML/DiVeQ/main/diveq_teaser.png)
 
 `diveq` method is published as a research paper entitled [*"DiVeQ: Differentiable Vector Quantization Using the Reparameterization Trick"*](https://arxiv.org/pdf/2509.26469) in the International Conference on Learning Representations (ICLR) in 2026. You can find the original GitHub repository of the paper at [https://github.com/AaltoML/DiVeQ](https://github.com/AaltoML/DiVeQ).
 
