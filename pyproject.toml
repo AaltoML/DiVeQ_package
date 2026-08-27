@@ -1,7 +1,7 @@
 [project]
 name = "diveq"
 authors = [{name = "Mohammad Hassan Vali", email = "mohammad.vali@aalto.fi"}]
-version = "0.1.1"
+version = "0.1.2"
 description = "A PyTorch class for end-to-end training of vector quantization codebook in a deep neural network."
 readme = "README.md"
 license = { file = "LICENSE.txt" }

@@ -272,7 +272,7 @@ class ResidualDIVEQ(nn.Module):
                 sampled_indices = used_indices[randomly_sampled_indices]
                 used_codebooks = self.codebook[i, sampled_indices].clone()
 
-                self.codebook[i, unused_indices] = (used_codebooks + self.perturb_eps
+                self.codebook.data[i, unused_indices] = (used_codebooks + self.perturb_eps
                                             * torch.randn_like(used_codebooks)).clone()
                 self.codebook_usage[i].zero_()
 

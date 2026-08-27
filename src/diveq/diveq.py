@@ -220,7 +220,7 @@ class DIVEQ(nn.Module):
             sampled_indices = used_indices[randomly_sampled_indices]
             used_codebooks = self.codebook[sampled_indices].clone()
 
-            self.codebook[unused_indices] = (used_codebooks +
+            self.codebook.data[unused_indices] = (used_codebooks +
                          self.perturb_eps * torch.randn_like(used_codebooks)).clone()
             self.codebook_usage.zero_()
 
