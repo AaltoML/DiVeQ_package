@@ -30,6 +30,8 @@ class ResidualDIVEQ(nn.Module):
             If False, the codebook is initialized from a normal distribution.
         - allow_warning (bool): Whether to print the warnings.
         - verbose (bool): Whether to print codebook replacement status.
+        - codebook_reset (bool): Whether to apply codebook replacement to avoid
+            codebook collapse.
 
     Returns:
         - z_q (torch.Tensor): Differentiable quantized input/latent. shape (N, D)
@@ -50,6 +52,7 @@ class ResidualDIVEQ(nn.Module):
             uniform_init: bool = True,
             allow_warning: bool = True,
             verbose: bool = True,
+            codebook_reset: bool = True,
     ):
         super().__init__()
 
@@ -63,6 +66,7 @@ class ResidualDIVEQ(nn.Module):
         self.uniform_init = uniform_init
         self.allow_warning = allow_warning
         self.verbose = verbose
+        self.codebook_reset = codebook_reset
 
         self._check_constraints()
 
@@ -72,27 +76,29 @@ class ResidualDIVEQ(nn.Module):
                 warnings.warn(f"`noise_var` is set to {noise_var}, which is"
                               f" quite large. Values > 0.01 may overshoot"
                               f" nearest-neighbor mapping.", UserWarning)
-            if replacement_iters < 50:
-                warnings.warn(f"`replacement_iters` is set to"
-                              f" {replacement_iters}, which is quite small. Values < 50"
-                              f" may cause too early and frequent codebook"
-                              f" replacements.", UserWarning)
-            elif replacement_iters > 300:
-                warnings.warn(f"`replacement_iters` is set to"
-                              f" {replacement_iters}, which is quite large."
-                              f" Values > 300 may cause too late and sporadic codebook"
-                              f" replacements.", UserWarning)
+            if codebook_reset:
+                if replacement_iters < 50:
+                    warnings.warn(f"`replacement_iters` is set to"
+                                  f" {replacement_iters}, which is quite small."
+                                  f" Values < 50 may cause too early and frequent"
+                                  f" codebook replacements.", UserWarning)
+                elif replacement_iters > 300:
+                    warnings.warn(f"`replacement_iters` is set to"
+                                  f" {replacement_iters}, which is quite large."
+                                  f" Values > 300 may cause too late and sporadic"
+                                  f" codebook replacements.", UserWarning)
 
-            if discard_threshold > 0.05:
-                warnings.warn(f"`discard_threshold` is set to"
-                              f" {discard_threshold}, which is quite large."
-                              f" Values > 0.05 may discard a portion of suitable but"
-                              f" rarely used codewords.", UserWarning)
+                if discard_threshold > 0.05:
+                    warnings.warn(f"`discard_threshold` is set to"
+                                  f" {discard_threshold}, which is quite large."
+                                  f" Values > 0.05 may discard a portion of suitable"
+                                  f" but rarely used codewords.", UserWarning)
 
-            if perturb_eps > 1e-6:
-                warnings.warn(f"`perturb_eps` is set to {perturb_eps}, which"
-                              f" is quite large. Values > 1e-6 may cause big"
-                              f" perturbation/shift from used codewords.", UserWarning)
+                if perturb_eps > 1e-6:
+                    warnings.warn(f"`perturb_eps` is set to {perturb_eps},"
+                                  f" which is quite large. Values > 1e-6 may cause big"
+                                  f" perturbation/shift from used codewords.",
+                                  UserWarning)
 
         # ---------------- Codebook initialization ----------------
         if uniform_init:
@@ -161,10 +167,11 @@ class ResidualDIVEQ(nn.Module):
         z_q = z + vq_error  # Differentiable quantized input
 
         # Track used indices for codebook replacement
-        with torch.no_grad():
-            self.iter_counter += 1
-            if self.iter_counter.item() % self.replacement_iters == 0:
-                self._replace_unused_entries() # Applies codebook replacement
+        if self.codebook_reset:
+            with torch.no_grad():
+                self.iter_counter += 1
+                if self.iter_counter.item() % self.replacement_iters == 0:
+                    self._replace_unused_entries() # Applies codebook replacement
 
         return z_q, indices_list, perplexity_list
 
@@ -213,14 +220,15 @@ class ResidualDIVEQ(nn.Module):
             raise ValueError("`noise_var` must be a positive float value. To have more"
                              " precise nearest-neighbor assignments, it is recommended"
                              " that noise_var < 1e-2.")
-        if (self.replacement_iters <= 0) or (type(self.replacement_iters) is not int):
-            raise ValueError("`replacement_iters` must be a positive integer value."
-                             " It is recommended that 50 < replacement_iters < 300.")
-        if (self.discard_threshold < 0.0) or (self.discard_threshold > 1.0):
-            raise ValueError("`discard_threshold` must be in the range of [0,1]. It is"
-                             " recommended that 0.01 < discard_threshold < 0.05,"
-                             " such that discard_threshold=0.01 means to discard the"
-                             " codebook entries which are used less than 1 percent.")
+        if self.codebook_reset:
+            if (self.replacement_iters <= 0) or (type(self.replacement_iters) is not int):
+                raise ValueError("`replacement_iters` must be a positive integer value."
+                                 " It is recommended that 50 < replacement_iters < 300.")
+            if (self.discard_threshold < 0.0) or (self.discard_threshold > 1.0):
+                raise ValueError("`discard_threshold` must be in the range of [0,1]. It is"
+                                 " recommended that 0.01 < discard_threshold < 0.05,"
+                                 " such that discard_threshold=0.01 means to discard the"
+                                 " codebook entries which are used less than 1 percent.")
 
     def _check_input(self, z: torch.Tensor) -> None:
         if z.ndim != 2:
@@ -291,5 +299,6 @@ class ResidualDIVEQ(nn.Module):
             f"perturb_eps={self.perturb_eps}, "
             f"uniform_init={self.uniform_init}, "
             f"allow_warning={self.allow_warning}, "
-            f"verbose={self.verbose}"
+            f"verbose={self.verbose}, "
+            f"codebook_reset={self.codebook_reset}"
         )

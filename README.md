@@ -45,7 +45,11 @@ Below you see a minimal example of how to import and use the `DIVEQ` optimizatio
 
 ```bash
 from diveq import DIVEQ
-vector_quantizer = DIVEQ(num_embeddings, embedding_dim)
+vector_quantizer = DIVEQ(num_embeddings = 512, # codebook size
+                         embedding_dim = 256)  # embedding dimension
+
+z = torch.randn(100, 256)
+z_quantized, indices, perplexity = vector_quantizer(z) # shapes: (100, 256), (100, ), (1) 
 ```
 
 - `vector_quantizer` is the vector quantization module that will be used for building the model.
