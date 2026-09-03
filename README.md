@@ -5,7 +5,7 @@
 
 The `diveq` method is published as a research paper entitled [*"DiVeQ: Differentiable Vector Quantization Using the Reparameterization Trick"*](https://arxiv.org/pdf/2509.26469) in the International Conference on Learning Representations (ICLR) in 2026. You can find the original GitHub repository of the paper at [https://github.com/AaltoML/DiVeQ](https://github.com/AaltoML/DiVeQ).
 
-`diveq` package includes eight different vector quantization (VQ) methods:
+The `diveq` package includes eight different vector quantization (VQ) methods:
 1. `from diveq import DIVEQ` optimizes the VQ codebook via DiVeQ technique. DiVeQ is the first proposed method in the paper that works as an ordinary VQ by mapping the input to codebook vectors.
 2. `from diveq import SFDIVEQ` optimizes the VQ codebook via Space-Filling DiVeQ technique. SF-DiVeQ is the second proposed method in the paper, different from ordinary VQ in a way that it maps the input to a space-filling curve constructed from codebook vectors.
 
