@@ -43,17 +43,27 @@ Before using `diveq`, you have to install it using `pip install diveq`.
 
 Below you see a minimal example of how to import and use the `DIVEQ` optimization method as a vector quantizer in a model.
 
-```bash
+```python
 from diveq import DIVEQ
 vector_quantizer = DIVEQ(num_embeddings = 512, # codebook size
-                         embedding_dim = 256)  # embedding dimension
+                         embedding_dim = 256   # embedding dimension
+                         )
 
 z = torch.randn(100, 256)
-z_quantized, indices, perplexity = vector_quantizer(z) # shapes: (100, 256), (100, ), (1) 
+
+# when training
+z_quantized, indices, perplexity = vector_quantizer(z) # shapes: (100, 256), (100, ), (1)
+
+# at inference
+z_quantized, indices, perplexity = vector_quantizer.inference(z) # shapes: (100, 256), (100, ), (1)
 ```
 
 - `vector_quantizer` is the vector quantization module that will be used for building the model.
 - `num_embeddings` and `embedding_dim` are the codebook size and dimension of each codebook entry, respectively. In the following, you can find the list of all parameters used in different vector quantization modules incorporated in `diveq` package.
+
+- `z_quantized` is the differentiable quantized verson of input z
+- `indices` is the selected codebook indices
+- `perplexity` is the codebook perplexity/usage (entropy of selected indices)
 
 In the `example` directory of the [GitHub for `diveq` package](https://github.com/AaltoML/DiVeQ_package), we provide a code example of how vector quantization modules in `diveq` can be used in a vector quantized variational autoencoder (VQ-VAE). You can create the required environment to run the code by running:
 
@@ -70,6 +80,28 @@ Then, you can train the VQ-VAE model by running:
 python train.py
 ```
 
+# Tensor shape requirements
+All quantization methods in `diveq` package takes input with the shape of (N, D) where N is the number of latent vectors and D is the embedding dimension. Usually for image data, the input of vector quantizer has the shape of (B, C, H, W) where B: batch size, C: input channels, H and W: Height and Width. In this case, to use `diveq` quantization methods, you need permutation and reshaping of the latent z:
+
+```python
+# extract latent z from input image x
+z = self.encoder(x)
+
+# first do the permutation and reshaping
+z_permuted = z.permute(0, 2, 3, 1) # Convert BCHW -> BHWC
+z_shape = z_permuted.shape
+z_flattened = z_permuted.view(-1, embedding_dim)  # Flatten the latents
+
+# apply vector quantization using any method in diveq package
+z_quantized, indices, perplexity = self.vector_quantizer(z)
+
+# Apply permutation and reshaping back
+z_quantized = (z_quantized.view(z_shape)).permute(0, 3, 1, 2) # Convert BHWC -> BCHW
+
+# reconstruct the image from quantized latents
+x_recon = self.decoder(z_quantized)
+```
+
 # List of Parameters
 Here, we provide the list of parameters that are used as inputs to eight different vector quantization methods included in `diveq` package.
 
@@ -81,6 +113,7 @@ Here, we provide the list of parameters that are used as inputs to eight differe
 - `perturb_eps` (float): Adjusts perturbation/shift magnitude from used codewords for codebook replacement.
 - `uniform_init` (bool): Whether to use uniform initialization. If False, codebook is initialized from a normal distribution.
 - `verbose` (bool): Whether to print codebook replacement status, i.e., to print how many unused codewords are replaced.
+- `codebook_reset` (bool): Whether to to apply codebook replacement to avoid codebook collapse.
 - `skip_iters` (integer): Number of training iterations to skip quantization (for *SF-DiVeQ* and *SF-DiVeQ_Detach*) or to use *DiVeQ* quantization (for *Residual_SF-DiVeQ* and *Product_SF-DiVeQ*) in the custom initialization.
 - `avg_iters` (integer): Number of recent training iterations to extract latents for custom codebook initialization in Space-Filling Versions.
 - `latents_on_cpu` (bool): Whether to collect latents for custom initialization on CPU. If running out of CUDA memory, set it to True.
