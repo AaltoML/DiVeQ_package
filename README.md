@@ -3,7 +3,7 @@
 
 ![alt text](https://raw.githubusercontent.com/AaltoML/DiVeQ/main/diveq_teaser.png)
 
-`diveq` method is published as a research paper entitled [*"DiVeQ: Differentiable Vector Quantization Using the Reparameterization Trick"*](https://arxiv.org/pdf/2509.26469) in the International Conference on Learning Representations (ICLR) in 2026. You can find the original GitHub repository of the paper at [https://github.com/AaltoML/DiVeQ](https://github.com/AaltoML/DiVeQ).
+The `diveq` method is published as a research paper entitled [*"DiVeQ: Differentiable Vector Quantization Using the Reparameterization Trick"*](https://arxiv.org/pdf/2509.26469) in the International Conference on Learning Representations (ICLR) in 2026. You can find the original GitHub repository of the paper at [https://github.com/AaltoML/DiVeQ](https://github.com/AaltoML/DiVeQ).
 
 `diveq` package includes eight different vector quantization (VQ) methods:
 1. `from diveq import DIVEQ` optimizes the VQ codebook via DiVeQ technique. DiVeQ is the first proposed method in the paper that works as an ordinary VQ by mapping the input to codebook vectors.
@@ -45,8 +45,8 @@ Below you see a minimal example of how to import and use the `DIVEQ` optimizatio
 
 ```python
 from diveq import DIVEQ
-vector_quantizer = DIVEQ(num_embeddings = 512, # codebook size
-                         embedding_dim = 256   # embedding dimension
+vector_quantizer = DIVEQ(num_embeddings=512, # codebook size
+                         embedding_dim=256   # embedding dimension
                          )
 
 z = torch.randn(100, 256)
@@ -55,17 +55,18 @@ z = torch.randn(100, 256)
 z_quantized, indices, perplexity = vector_quantizer(z) # shapes: (100, 256), (100, ), (1)
 
 # at inference
-z_quantized, indices, perplexity = vector_quantizer.inference(z) # shapes: (100, 256), (100, ), (1)
+z_q_hard, indices, perplexity = vector_quantizer.inference(z) # shapes: (100, 256), (100, ), (1)
 ```
 
 - `vector_quantizer` is the vector quantization module that will be used for building the model.
-- `num_embeddings` and `embedding_dim` are the codebook size and dimension of each codebook entry, respectively. In the following, you can find the list of all parameters used in different vector quantization modules incorporated in `diveq` package.
+- `num_embeddings` and `embedding_dim` are the codebook size and dimension of each codebook entry, respectively. In the following, you can find the list of all input parameters in different vector quantization modules incorporated in `diveq` package.
 
-- `z_quantized` is the differentiable quantized verson of input z
+- `z_quantized` is the differentiable quantized version of input z used when training
+- `z_q_hard` is the non-differentiable (hard) quantized version of input z used at inference
 - `indices` is the selected codebook indices
 - `perplexity` is the codebook perplexity/usage (entropy of selected indices)
 
-In the `example` directory of the [GitHub for `diveq` package](https://github.com/AaltoML/DiVeQ_package), we provide a code example of how vector quantization modules in `diveq` can be used in a vector quantized variational autoencoder (VQ-VAE). You can create the required environment to run the code by running:
+In the `example` directory of the [GitHub for diveq package](https://github.com/AaltoML/DiVeQ_package), we provide a code example of how vector quantization modules in `diveq` can be used in a vector quantized variational autoencoder (VQ-VAE). You can create the required environment to run the code by running:
 
 ```bash
 cd example  #change directory to the example folder
@@ -81,7 +82,7 @@ python train.py
 ```
 
 # Tensor shape requirements
-All quantization methods in `diveq` package takes input with the shape of (N, D) where N is the number of latent vectors and D is the embedding dimension. Usually for image data, the input of vector quantizer has the shape of (B, C, H, W) where B: batch size, C: input channels, H and W: Height and Width. In this case, to use `diveq` quantization methods, you need permutation and reshaping of the latent z:
+All quantization methods in `diveq` package take input with the shape of (N, D), where N is the number of latent vectors and D is the embedding dimension. Usually for image data, the input of vector quantizer has the shape of (B, C, H, W), where B: batch size, C: input channels, H and W: Height and Width. In this case, to use `diveq` quantization methods, you need permutation and reshaping of the latent z:
 
 ```python
 # extract latent z from input image x
@@ -95,7 +96,7 @@ z_flattened = z_permuted.view(-1, embedding_dim)  # Flatten the latents
 # apply vector quantization using any method in diveq package
 z_quantized, indices, perplexity = self.vector_quantizer(z)
 
-# Apply permutation and reshaping back
+# apply permutation and reshaping back
 z_quantized = (z_quantized.view(z_shape)).permute(0, 3, 1, 2) # Convert BHWC -> BCHW
 
 # reconstruct the image from quantized latents
@@ -113,7 +114,7 @@ Here, we provide the list of parameters that are used as inputs to eight differe
 - `perturb_eps` (float): Adjusts perturbation/shift magnitude from used codewords for codebook replacement.
 - `uniform_init` (bool): Whether to use uniform initialization. If False, codebook is initialized from a normal distribution.
 - `verbose` (bool): Whether to print codebook replacement status, i.e., to print how many unused codewords are replaced.
-- `codebook_reset` (bool): Whether to to apply codebook replacement to avoid codebook collapse.
+- `codebook_reset` (bool): Whether to apply codebook replacement to avoid codebook collapse.
 - `skip_iters` (integer): Number of training iterations to skip quantization (for *SF-DiVeQ* and *SF-DiVeQ_Detach*) or to use *DiVeQ* quantization (for *Residual_SF-DiVeQ* and *Product_SF-DiVeQ*) in the custom initialization.
 - `avg_iters` (integer): Number of recent training iterations to extract latents for custom codebook initialization in Space-Filling Versions.
 - `latents_on_cpu` (bool): Whether to collect latents for custom initialization on CPU. If running out of CUDA memory, set it to True.
@@ -126,7 +127,7 @@ Here, we provide the list of parameters that are used as inputs to eight differe
 
 2. **Variants of Vector Quantization:** Residual VQ and Product VQ are two variants of vector quantization, which are included in the `diveq` package. These variants utilize multiple codebooks for quantization, where `num_codebooks` determines the number of codebooks used in these VQ variants.
 
-3. **Space-Filling Methods:** Quantization methods based on Space-Filling (i.e., *SF-DiVeQ*, *SF-DiVeQ_Detach*, *Residual_SF-DiVeQ*, *Product_SF-DiVeQ*) use a custom initilization. *SF-DiVeQ* and *SF-DiVeQ_Detach* skip quantizing the latents for `skip_iters` training iterations, and initialize the codebook with an average of latents captured from `avg_iters` recent training iterations. After this custom initialization, they start to quantize the latents. *Residual_SF-DiVeQ* and *Product_SF-DiVeQ* work in the same way, but they apply *DiVeQ* for the first `skip_iters` training iterations. Note that if `avg_iters` value is set to a large value, CUDA might run out of memory, as there should be a large pull of latents to be stored for custom initialization. Therefore, the user can set `latents_on_cpu=True` to store the latents on CPU, or set a smaller value for `avg_iters`.
+3. **Space-Filling Methods:** Quantization methods based on Space-Filling (i.e., *SF-DiVeQ*, *SF-DiVeQ_Detach*, *Residual_SF-DiVeQ*, *Product_SF-DiVeQ*) use a custom initialization. *SF-DiVeQ* and *SF-DiVeQ_Detach* skip quantizing the latents for `skip_iters` training iterations, and initialize the codebook with an average of latents captured from `avg_iters` recent training iterations. After this custom initialization, they start to quantize the latents. *Residual_SF-DiVeQ* and *Product_SF-DiVeQ* work in the same way, but they apply *DiVeQ* for the first `skip_iters` training iterations. Note that if `avg_iters` value is set to a large value, CUDA might run out of memory, as there should be a large pool of latents to be stored for custom initialization. Therefore, the user can set `latents_on_cpu=True` to store the latents on CPU, or set a smaller value for `avg_iters`.
 
 4. **Detach Methods:** *DiVeQ_Detach* and *SF-DiVeQ_Detach* methods do not use directional noise. Therefore, they do not need to set the `noise_var` parameter.
 
